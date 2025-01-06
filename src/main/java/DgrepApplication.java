@@ -5,13 +5,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Scanner;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DgrepApplication {
 
     private static final Scanner SCANNER = new Scanner(System.in);
-
 
     public static void main(String[] args) {
         while (true) {
@@ -28,13 +26,13 @@ public class DgrepApplication {
             String relativePath = parts[2];
 
             Path path = Paths.get(relativePath);
-            if(!Files.isDirectory(path)) {
-                try(BufferedReader reader = Files.newBufferedReader(path)) {
-                    List<String> lines = reader.lines().toList();
-                    for(int i = 0; i<lines.size(); i++) {
-                        if(lines.get(i).contains(keyword)) {
-                            System.out.println("file: " + path.getFileName() + " line: " + (i+1));
-                        }
+            if (!Files.isDirectory(path)) {
+                extractLineNumber(path, keyword);
+            } else {
+                try (Stream<Path> walk = Files.walk(path)) {
+                    List<Path> files = walk.filter(Files::isRegularFile).toList();
+                    for (Path file : files) {
+                        extractLineNumber(file, keyword);
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -43,6 +41,21 @@ public class DgrepApplication {
 
         }
 
+    }
+
+    private static void extractLineNumber(Path path, String keyword) {
+        try (BufferedReader reader = Files.newBufferedReader(path)) {
+            List<String> lines = reader.lines().toList();
+            Path fileName = path.getFileName();
+            int lineLength = lines.size();
+            for (int i = 0; i < lineLength; i++) {
+                if (lines.get(i).contains(keyword)) {
+                    System.out.println("file: " + fileName + " line: " + (i + 1));
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private static String getCommand() {
