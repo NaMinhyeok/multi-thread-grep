@@ -1,4 +1,12 @@
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class DgrepApplication {
 
@@ -18,6 +26,21 @@ public class DgrepApplication {
             }
             String keyword = parts[1];
             String relativePath = parts[2];
+
+            Path path = Paths.get(relativePath);
+            if(!Files.isDirectory(path)) {
+                try(BufferedReader reader = Files.newBufferedReader(path)) {
+                    List<String> lines = reader.lines().toList();
+                    for(int i = 0; i<lines.size(); i++) {
+                        if(lines.get(i).contains(keyword)) {
+                            System.out.println("file: " + path.getFileName() + " line: " + (i+1));
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
         }
 
     }
