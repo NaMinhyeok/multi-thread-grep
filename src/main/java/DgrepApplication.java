@@ -26,17 +26,11 @@ public class DgrepApplication {
             String relativePath = parts[2];
 
             Path path = Paths.get(relativePath);
-            if (!Files.isDirectory(path)) {
-                extractLineNumber(path, keyword);
-            } else {
-                try (Stream<Path> walk = Files.walk(path)) {
-                    List<Path> files = walk.filter(Files::isRegularFile).toList();
-                    for (Path file : files) {
-                        extractLineNumber(file, keyword);
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            try(Stream<Path> walk = Files.walk(path)) {
+                walk.filter(Files::isRegularFile).toList().parallelStream()
+                    .forEach(file -> extractLineNumber(file, keyword));
+            } catch (IOException e) {
+                e.printStackTrace();
             }
 
         }
