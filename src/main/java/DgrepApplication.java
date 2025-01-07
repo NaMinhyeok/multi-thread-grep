@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 public class DgrepApplication {
@@ -42,15 +43,16 @@ public class DgrepApplication {
 
     private static String extractLineNumber(Path path, String keyword) {
         StringBuilder result = new StringBuilder();
-        try (BufferedReader reader = Files.newBufferedReader(path)) {
-            List<String> lines = reader.lines().toList();
-            Path fileName = path.getFileName();
-            int lineLength = lines.size();
-            for (int i = 0; i < lineLength; i++) {
-                if (lines.get(i).contains(keyword)) {
-                    result.append(String.format("file: %s line: %d%n", fileName, i + 1));
+        try (Stream<String> lines = Files.lines(path)) {
+            AtomicInteger lineNumber = new AtomicInteger(1);
+            lines.forEach(
+                line -> {
+                    if(line.contains(keyword)) {
+                        result.append(String.format("file: %s line: %d%n", path.getFileName(), lineNumber.get()));
+                    }
+                    lineNumber.incrementAndGet();
                 }
-            }
+            );
         } catch (IOException e) {
             e.printStackTrace();
         }
