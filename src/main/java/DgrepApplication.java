@@ -26,9 +26,12 @@ public class DgrepApplication {
             String relativePath = parts[2];
 
             Path path = Paths.get(relativePath);
-            try(Stream<Path> walk = Files.walk(path)) {
-                walk.filter(Files::isRegularFile).toList().parallelStream()
-                    .forEach(file -> extractLineNumber(file, keyword));
+            try (Stream<Path> walk = Files.walk(path)) {
+                walk.filter(Files::isRegularFile)
+                    .parallel()
+                    .map(file -> extractLineNumber(file, keyword))
+                    .filter(result -> !result.isEmpty())
+                    .forEach(System.out::println);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -37,19 +40,21 @@ public class DgrepApplication {
 
     }
 
-    private static void extractLineNumber(Path path, String keyword) {
+    private static String extractLineNumber(Path path, String keyword) {
+        StringBuilder result = new StringBuilder();
         try (BufferedReader reader = Files.newBufferedReader(path)) {
             List<String> lines = reader.lines().toList();
             Path fileName = path.getFileName();
             int lineLength = lines.size();
             for (int i = 0; i < lineLength; i++) {
                 if (lines.get(i).contains(keyword)) {
-                    System.out.println("file: " + fileName + " line: " + (i + 1));
+                    result.append(String.format("file: %s line: %d%n", fileName, i + 1));
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return result.toString();
     }
 
     private static String getCommand() {
